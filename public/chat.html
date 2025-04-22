@@ -1,178 +1,278 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chat - AI Tutor</title>
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="/css/chat.css">
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/chat.css" />
     <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
-</head>
+  </head>
 <body>
-    <div class="chat-container">
-        <header class="chat-header">
-            <div class="chat-info">
-                <h2 id="subjectName">Loading...</h2>
-                <span id="topicName" class="topic">Loading...</span>
+    <div class="page-container">
+        <div class="conversation-sidebar">
+            <div class="sidebar-header">
+                <h3>Previous Conversations</h3>
             </div>
-            <div class="user-controls">
-                <button class="btn btn-primary" onclick="window.location.href='/subjects.html'">Change Subject</button>
-                <button class="btn btn-logout" onclick="logout()">Logout</button>
+            <div id="conversationList" class="conversation-list">
+                <!-- Conversations will be loaded here -->
             </div>
-        </header>
-
-        <div id="chatMessages" class="chat-messages"></div>
-
-        <div id="typingIndicator" class="typing-indicator hidden">
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
         </div>
-
-        <div class="chat-input">
-            <form id="chatForm" class="chat-form">
-                <textarea 
-                    id="messageInput" 
-                    placeholder="Type your question here..."
-                    rows="2"
-                    required
-                ></textarea>
-                <button type="submit" class="btn btn-primary send-button">
-                    <span class="spinner hidden"></span>
-                    <span class="button-text">Send</span>
-                </button>
-            </form>
+        <div class="chat-container">
+      <header class="chat-header">
+        <div class="chat-info">
+          <h2 id="subjectName">Loading...</h2>
+          <span id="topicName" class="topic">Loading...</span>
         </div>
+        <div class="user-controls">
+          <button
+            class="btn btn-primary"
+            onclick="window.location.href='/subjects.html'"
+          >
+            Change Subject
+          </button>
+          <button class="btn btn-logout" onclick="logout()">Logout</button>
+        </div>
+      </header>
+
+      <div id="chatMessages" class="chat-messages"></div>
+
+      <div id="typingIndicator" class="typing-indicator hidden">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+
+      <div class="chat-input">
+        <form id="chatForm" class="chat-form">
+          <textarea
+            id="messageInput"
+            placeholder="Type your question here... (Press Enter to send, Shift+Enter for new line)"
+            rows="2"
+            required
+            onkeydown="handleKeyDown(event)"
+          ></textarea>
+          <button type="submit" class="btn btn-primary send-button">
+            <span class="spinner hidden"></span>
+            <span class="button-text">Send</span>
+          </button>
+        </form>
+      </div>
     </div>
 
     <script src="/js/auth.js"></script>
     <script>
-        // Initialize markdown converter
-        const converter = new showdown.Converter({
-            tables: true,
-            simplifiedAutoLink: true,
-            strikethrough: true,
-            tasklists: true
-        });
+      // Handle textarea key press
+      function handleKeyDown(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+          event.preventDefault();
+          document.getElementById('chatForm').requestSubmit();
+        }
+      }
 
-        // Get URL parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        const subjectId = urlParams.get('subject');
-        const topic = urlParams.get('topic');
-        let currentConversationId = null;
+      // Initialize markdown converter
+      const converter = new showdown.Converter({
+        tables: true,
+        simplifiedAutoLink: true,
+        strikethrough: true,
+        tasklists: true,
+      });
 
-        // Initialize page
-        async function initChat() {
-            if (!subjectId || !topic) {
-                window.location.href = '/subjects.html';
-                return;
-            }
+      // Get URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const subjectId = urlParams.get("subject");
+      const topic = urlParams.get("topic");
+      let currentConversationId = null;
 
-            try {
-                // Get subject details
-                const response = await authFetch(`/api/subjects/${subjectId}`);
-                const data = await response.json();
+      // Load conversations
+      async function loadConversations() {
+        try {
+          const response = await authFetch('/api/chat/conversations');
+          const data = await response.json();
 
-                if (!data.success) {
-                    throw new Error(data.message || 'Failed to load subject');
-                }
+          if (!data.success) {
+            throw new Error(data.message || 'Failed to load conversations');
+          }
 
-                document.getElementById('subjectName').textContent = data.data.name;
-                document.getElementById('topicName').textContent = decodeURIComponent(topic);
-            } catch (error) {
-                console.error('Error initializing chat:', error);
-                alert('Failed to load chat. Redirecting to subjects page...');
-                window.location.href = '/subjects.html';
-            }
+          const conversationList = document.getElementById('conversationList');
+          conversationList.innerHTML = '';
+
+          data.data.conversations.forEach(conversation => {
+            const div = document.createElement('div');
+            div.className = `conversation-item${conversation._id === currentConversationId ? ' active' : ''}`;
+            div.innerHTML = `
+              <div class="topic">${conversation.topic}</div>
+              <div class="timestamp">${new Date(conversation.updatedAt).toLocaleDateString()}</div>
+            `;
+            div.addEventListener('click', () => loadConversation(conversation._id));
+            conversationList.appendChild(div);
+          });
+        } catch (error) {
+          console.error('Error loading conversations:', error);
+        }
+      }
+
+      // Load specific conversation
+      async function loadConversation(conversationId) {
+        try {
+          const response = await authFetch(`/api/chat/conversations/${conversationId}`);
+          const data = await response.json();
+
+          if (!data.success) {
+            throw new Error(data.message || 'Failed to load conversation');
+          }
+
+          // Update UI
+          const conversation = data.data;
+          document.getElementById('chatMessages').innerHTML = '';
+          conversation.messages.forEach(msg => {
+            addMessage(msg.content, msg.role === 'user');
+          });
+
+          // Update current conversation ID
+          currentConversationId = conversationId;
+
+          // Update active state in sidebar
+          document.querySelectorAll('.conversation-item').forEach(item => {
+            item.classList.toggle('active', item._id === conversationId);
+          });
+
+          // Update subject and topic display
+          document.getElementById('subjectName').textContent = conversation.subjectId.name;
+          document.getElementById('topicName').textContent = conversation.topic;
+        } catch (error) {
+          console.error('Error loading conversation:', error);
+          alert('Failed to load conversation');
+        }
+      }
+
+      // Initialize page
+      async function initChat() {
+        if (!subjectId || !topic) {
+          window.location.href = "/subjects.html";
+          return;
         }
 
-        // Add message to chat
-        function addMessage(content, isUser = false) {
-            const messagesDiv = document.getElementById('chatMessages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
-            
-            // Convert markdown to HTML for assistant messages
-            const messageContent = isUser ? content : converter.makeHtml(content);
-            messageDiv.innerHTML = messageContent;
+        try {
+          // Get subject details
+          const response = await authFetch(`/api/subjects/${subjectId}`);
+          const data = await response.json();
 
-            // Add timestamp
-            const timeSpan = document.createElement('div');
-            timeSpan.className = 'message-time';
-            timeSpan.textContent = new Date().toLocaleTimeString();
-            messageDiv.appendChild(timeSpan);
+          if (!data.success) {
+            throw new Error(data.message || "Failed to load subject");
+          }
 
-            messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+          document.getElementById("subjectName").textContent = data.data.name;
+          document.getElementById("topicName").textContent =
+            decodeURIComponent(topic);
+        } catch (error) {
+          console.error("Error initializing chat:", error);
+          alert("Failed to load chat. Redirecting to subjects page...");
+          window.location.href = "/subjects.html";
         }
+      }
 
-        // Handle form submission
-        document.getElementById('chatForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const messageInput = document.getElementById('messageInput');
-            const message = messageInput.value.trim();
-            if (!message) return;
+      // Add message to chat
+      function addMessage(content, isUser = false) {
+        const messagesDiv = document.getElementById("chatMessages");
+        const messageDiv = document.createElement("div");
+        messageDiv.className = `message ${isUser ? "user" : "assistant"}`;
 
-            const buttonText = document.querySelector('.button-text');
-            const spinner = document.querySelector('.spinner');
-            const typingIndicator = document.getElementById('typingIndicator');
-            
-            // Show loading state
-            buttonText.textContent = 'Sending...';
-            spinner.classList.remove('hidden');
-            messageInput.disabled = true;
+        // Convert markdown to HTML for assistant messages
+        const messageContent = isUser ? content : converter.makeHtml(content);
+        messageDiv.innerHTML = messageContent;
 
-            // Add user message to chat
-            addMessage(message, true);
-            messageInput.value = '';
+        // Add timestamp
+        const timeSpan = document.createElement("div");
+        timeSpan.className = "message-time";
+        timeSpan.textContent = new Date().toLocaleTimeString();
+        messageDiv.appendChild(timeSpan);
 
-            try {
-                // Show typing indicator
-                typingIndicator.classList.remove('hidden');
+        messagesDiv.appendChild(messageDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
 
-                const response = await authFetch('/api/chat/message', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        message,
-                        subjectId,
-                        topic,
-                        conversationId: currentConversationId
-                    })
-                });
+      // Handle form submission
+      document
+        .getElementById("chatForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
 
-                const data = await response.json();
+          const messageInput = document.getElementById("messageInput");
+          const message = messageInput.value.trim();
+          if (!message) return;
 
-                if (!data.success) {
-                    throw new Error(data.message || 'Failed to send message');
-                }
+          const buttonText = document.querySelector(".button-text");
+          const spinner = document.querySelector(".spinner");
+          const typingIndicator = document.getElementById("typingIndicator");
 
-                // Update conversation ID
-                currentConversationId = data.data.conversation._id;
+          // Show loading state
+          buttonText.textContent = "Sending...";
+          spinner.classList.remove("hidden");
+          messageInput.disabled = true;
 
-                // Add AI response to chat
-                addMessage(data.data.latestResponse.content);
-            } catch (error) {
-                console.error('Error sending message:', error);
-                addMessage('⚠️ Failed to get response. Please try again.', false);
-            } finally {
-                // Reset states
-                buttonText.textContent = 'Send';
-                spinner.classList.add('hidden');
-                messageInput.disabled = false;
-                typingIndicator.classList.add('hidden');
-                messageInput.focus();
+          // Add user message to chat
+          addMessage(message, true);
+          messageInput.value = "";
+
+          try {
+
+            const response = await authFetch("/api/chat/message", {
+              method: "POST",
+              body: JSON.stringify({
+                message,
+                subjectId,
+                topic,
+                conversationId: currentConversationId,
+              }),
+            });
+
+            const data = await response.json();
+
+            if (!data.success) {
+              throw new Error(data.message || "Failed to send message");
             }
+
+            // Update conversation ID
+            currentConversationId = data.data.conversation._id;
+
+            // Show typing indicator when waiting for AI response
+            typingIndicator.classList.remove("hidden");
+
+            // Add AI response to chat
+            addMessage(data.data.latestResponse.content);
+            
+            // Hide typing indicator after receiving response
+            typingIndicator.classList.add("hidden");
+
+            // Refresh conversations list
+            loadConversations();
+          } catch (error) {
+            console.error("Error sending message:", error);
+            addMessage("⚠️ Failed to get response. Please try again.", false);
+            // Hide typing indicator on error
+            typingIndicator.classList.add("hidden");
+          } finally {
+            // Reset states
+            buttonText.textContent = "Send";
+            spinner.classList.add("hidden");
+            messageInput.disabled = false;
+            messageInput.focus();
+          }
         });
 
-        // Initialize chat
-        document.addEventListener('DOMContentLoaded', () => {
-            checkAuth();
-            initChat();
+      // Initialize chat
+      document.addEventListener("DOMContentLoaded", () => {
+        checkAuth();
+        initChat();
+        loadConversations();
 
-            // Focus input
-            document.getElementById('messageInput').focus();
-        });
+        // Focus input
+        document.getElementById("messageInput").focus();
+
+        // Refresh conversations every minute
+        setInterval(loadConversations, 60000);
+      });
     </script>
-</body>
+  </body>
 </html>
