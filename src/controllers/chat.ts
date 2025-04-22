@@ -39,6 +39,7 @@ export const sendMessage = async (req: ChatRequest, res: Response): Promise<void
     }
 
     let conversation;
+    let isNewConversation = false;
 
     if (conversationId) {
       // Continue existing conversation
@@ -63,6 +64,25 @@ export const sendMessage = async (req: ChatRequest, res: Response): Promise<void
         topic,
         messages: []
       });
+      isNewConversation = true;
+    }
+
+    // For new conversations, get AI greeting first
+    if (isNewConversation) {
+      const greetingResponse = await AIService.getResponse(
+        "start_conversation",
+        subject.name,
+        topic,
+        []
+      );
+
+      if (!greetingResponse.error) {
+        conversation.messages.push({
+          content: greetingResponse.content,
+          role: 'assistant',
+          timestamp: new Date()
+        });
+      }
     }
 
     // Add user message
@@ -72,7 +92,7 @@ export const sendMessage = async (req: ChatRequest, res: Response): Promise<void
       timestamp: new Date()
     });
 
-    // Get AI response
+    // Get AI response to user's message
     const aiResponse = await AIService.getResponse(
       message,
       subject.name,
