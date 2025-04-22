@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import Conversation from '../models/Conversation';
 import Subject from '../models/Subject';
 import { IUser } from '../models/User';
+import { AIService } from '../services/ai';
 
 interface ChatRequest extends Request {
   user?: IUser;
@@ -71,16 +72,27 @@ export const sendMessage = async (req: ChatRequest, res: Response): Promise<void
       timestamp: new Date()
     });
 
-    // TODO: Integrate with actual AI service
-    // For now, return a simple response
-    const aiResponse = `I understand you're asking about ${topic} in ${subject.name}. How can I help you learn more about this topic?`;
+    // Get AI response
+    const aiResponse = await AIService.getResponse(
+      message,
+      subject.name,
+      topic,
+      conversation.messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }))
+    );
     
     // Add AI response
     conversation.messages.push({
-      content: aiResponse,
+      content: aiResponse.content,
       role: 'assistant',
       timestamp: new Date()
     });
+
+    if (aiResponse.error) {
+      console.error('AI Service Error:', aiResponse.error);
+    }
 
     await conversation.save();
 

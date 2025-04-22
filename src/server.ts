@@ -14,8 +14,13 @@ dotenv.config();
 // Initialize express
 const app = express();
 
-// Connect to MongoDB
-connectDB().catch(console.error);
+// Connect to MongoDB and initialize data
+connectDB()
+  .then(async () => {
+    const { initializeSubjects } = await import('./config/defaultSubjects');
+    return initializeSubjects();
+  })
+  .catch(console.error);
 
 // Middleware
 app.use(express.json());
