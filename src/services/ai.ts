@@ -19,20 +19,9 @@ interface ChatMessage {
   content: string;
 }
 
-export class AIService {
-  private static generateSystemPrompt(subject: string, topic: string): string {
-    return `You are an expert AI tutor specializing in ${subject}, particularly knowledgeable about ${topic}. 
-Your role is to help students understand concepts, solve problems, and prepare for exams.
-Please provide clear, detailed explanations and use examples when appropriate.
-If a concept is complex, break it down into simpler parts.
-Feel free to ask clarifying questions if needed.`;
-  }
+import { prompts } from '../prompts/ai-tutor';
 
-  private static generateContextPrompt(previousMessages: Array<{ content: string; role: string }>): string {
-    return previousMessages
-      .map(msg => `${msg.role}: ${msg.content}`)
-      .join('\n');
-  }
+export class AIService {
 
   static async getResponse(
     message: string,
@@ -41,8 +30,8 @@ Feel free to ask clarifying questions if needed.`;
     previousMessages: Array<{ content: string; role: string }> = []
   ): Promise<AIResponse> {
     try {
-      const systemPrompt = this.generateSystemPrompt(subject, topic);
-      const contextPrompt = this.generateContextPrompt(previousMessages);
+      const systemPrompt = prompts.systemPrompt(subject, topic);
+      const contextPrompt = prompts.contextPrompt(previousMessages);
 
       const messages: ChatMessage[] = [
         {
@@ -88,7 +77,7 @@ Feel free to ask clarifying questions if needed.`;
 
   static async validateSubjectKnowledge(subject: string, topic: string): Promise<boolean> {
     try {
-      const prompt = `As an AI tutor, do you have knowledge about ${subject}, specifically regarding ${topic}? Please respond with only "yes" or "no".`;
+      const prompt = prompts.validateKnowledge(subject, topic);
       
       const completion = await groq.chat.completions.create({
         messages: [
