@@ -15,15 +15,21 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@netlify/functions": "^3.1.2",
     "@types/express": "^5.0.1",
     "@types/node": "^22.14.1",
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.13.2",
     "netlify-cli": "^20.0.2",
     "serverless-http": "^3.2.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.9",
     "rimraf": "^6.0.1"
   }
 }

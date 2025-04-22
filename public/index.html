@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Netlify Express TypeScript API</title>
+    <title>AI Tutor API Documentation</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 2rem;
+            line-height: 1.6;
         }
         .endpoint {
             background-color: #f4f4f4;
@@ -17,18 +18,96 @@
             margin: 1rem 0;
             border-radius: 4px;
         }
+        .method {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+        .get { background-color: #61affe; color: white; }
+        .post { background-color: #49cc90; color: white; }
+        .put { background-color: #fca130; color: white; }
+        .delete { background-color: #f93e3e; color: white; }
+        .auth {
+            background-color: #e9ecef;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+        section {
+            margin: 2rem 0;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid #eee;
+        }
     </style>
 </head>
 <body>
-    <h1>Netlify Express TypeScript API</h1>
-    <p>Available endpoints:</p>
-    <div class="endpoint">
-        <strong>GET /api</strong>
-        <p>Welcome message</p>
-    </div>
-    <div class="endpoint">
-        <strong>GET /api/hello</strong>
-        <p>Hello message</p>
-    </div>
+    <h1>AI Tutor API Documentation</h1>
+    
+    <section>
+        <h2>Authentication Endpoints</h2>
+        <div class="endpoint">
+            <p><span class="method post">POST</span> <code>/api/auth/register</code></p>
+            <p>Register a new user</p>
+            <p>Body: { email, password, name }</p>
+        </div>
+        <div class="endpoint">
+            <p><span class="method post">POST</span> <code>/api/auth/login</code></p>
+            <p>Login user</p>
+            <p>Body: { email, password }</p>
+        </div>
+        <div class="endpoint">
+            <p><span class="method get">GET</span> <code>/api/auth/profile</code> <span class="auth">🔒 Auth required</span></p>
+            <p>Get user profile</p>
+        </div>
+    </section>
+
+    <section>
+        <h2>Subjects</h2>
+        <div class="endpoint">
+            <p><span class="method get">GET</span> <code>/api/subjects</code></p>
+            <p>Get all subjects and their topics</p>
+        </div>
+        <div class="endpoint">
+            <p><span class="method get">GET</span> <code>/api/subjects/:id</code></p>
+            <p>Get specific subject details</p>
+        </div>
+        <div class="endpoint">
+            <p><span class="method post">POST</span> <code>/api/subjects</code> <span class="auth">🔒 Auth required</span></p>
+            <p>Create new subject</p>
+            <p>Body: { name, topics: [{ name, description }] }</p>
+        </div>
+    </section>
+
+    <section>
+        <h2>Chat</h2>
+        <div class="endpoint">
+            <p><span class="method post">POST</span> <code>/api/chat/message</code> <span class="auth">🔒 Auth required</span></p>
+            <p>Send message to AI tutor</p>
+            <p>Body: { message, subjectId, topic, conversationId? }</p>
+        </div>
+        <div class="endpoint">
+            <p><span class="method get">GET</span> <code>/api/chat/conversations</code> <span class="auth">🔒 Auth required</span></p>
+            <p>Get conversation history</p>
+        </div>
+        <div class="endpoint">
+            <p><span class="method get">GET</span> <code>/api/chat/conversations/:id</code> <span class="auth">🔒 Auth required</span></p>
+            <p>Get specific conversation</p>
+        </div>
+    </section>
+
+    <section>
+        <h2>Health Check</h2>
+        <div class="endpoint">
+            <p><span class="method get">GET</span> <code>/api/health</code></p>
+            <p>Check API status</p>
+        </div>
+    </section>
+
+    <footer>
+        <p>🔒 Auth required: Include Bearer token in Authorization header</p>
+        <p>Example: <code>Authorization: Bearer your-token-here</code></p>
+    </footer>
 </body>
 </html>
