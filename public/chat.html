@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - AI Tutor</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/chat.css">
+    <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
+</head>
+<body>
+    <div class="chat-container">
+        <header class="chat-header">
+            <div class="chat-info">
+                <h2 id="subjectName">Loading...</h2>
+                <span id="topicName" class="topic">Loading...</span>
+            </div>
+            <div class="user-controls">
+                <button class="btn btn-primary" onclick="window.location.href='/subjects.html'">Change Subject</button>
+                <button class="btn btn-logout" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div id="chatMessages" class="chat-messages"></div>
+
+        <div id="typingIndicator" class="typing-indicator hidden">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+
+        <div class="chat-input">
+            <form id="chatForm" class="chat-form">
+                <textarea 
+                    id="messageInput" 
+                    placeholder="Type your question here..."
+                    rows="2"
+                    required
+                ></textarea>
+                <button type="submit" class="btn btn-primary send-button">
+                    <span class="spinner hidden"></span>
+                    <span class="button-text">Send</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script>
+        // Initialize markdown converter
+        const converter = new showdown.Converter({
+            tables: true,
+            simplifiedAutoLink: true,
+            strikethrough: true,
+            tasklists: true
+        });
+
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const subjectId = urlParams.get('subject');
+        const topic = urlParams.get('topic');
+        let currentConversationId = null;
+
+        // Initialize page
+        async function initChat() {
+            if (!subjectId || !topic) {
+                window.location.href = '/subjects.html';
+                return;
+            }
+
+            try {
+                // Get subject details
+                const response = await authFetch(`/api/subjects/${subjectId}`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to load subject');
+                }
+
+                document.getElementById('subjectName').textContent = data.data.name;
+                document.getElementById('topicName').textContent = decodeURIComponent(topic);
+            } catch (error) {
+                console.error('Error initializing chat:', error);
+                alert('Failed to load chat. Redirecting to subjects page...');
+                window.location.href = '/subjects.html';
+            }
+        }
+
+        // Add message to chat
+        function addMessage(content, isUser = false) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
+            
+            // Convert markdown to HTML for assistant messages
+            const messageContent = isUser ? content : converter.makeHtml(content);
+            messageDiv.innerHTML = messageContent;
+
+            // Add timestamp
+            const timeSpan = document.createElement('div');
+            timeSpan.className = 'message-time';
+            timeSpan.textContent = new Date().toLocaleTimeString();
+            messageDiv.appendChild(timeSpan);
+
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // Handle form submission
+        document.getElementById('chatForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            const buttonText = document.querySelector('.button-text');
+            const spinner = document.querySelector('.spinner');
+            const typingIndicator = document.getElementById('typingIndicator');
+            
+            // Show loading state
+            buttonText.textContent = 'Sending...';
+            spinner.classList.remove('hidden');
+            messageInput.disabled = true;
+
+            // Add user message to chat
+            addMessage(message, true);
+            messageInput.value = '';
+
+            try {
+                // Show typing indicator
+                typingIndicator.classList.remove('hidden');
+
+                const response = await authFetch('/api/chat/message', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        message,
+                        subjectId,
+                        topic,
+                        conversationId: currentConversationId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to send message');
+                }
+
+                // Update conversation ID
+                currentConversationId = data.data.conversation._id;
+
+                // Add AI response to chat
+                addMessage(data.data.latestResponse.content);
+            } catch (error) {
+                console.error('Error sending message:', error);
+                addMessage('⚠️ Failed to get response. Please try again.', false);
+            } finally {
+                // Reset states
+                buttonText.textContent = 'Send';
+                spinner.classList.add('hidden');
+                messageInput.disabled = false;
+                typingIndicator.classList.add('hidden');
+                messageInput.focus();
+            }
+        });
+
+        // Initialize chat
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            initChat();
+
+            // Focus input
+            document.getElementById('messageInput').focus();
+        });
+    </script>
+</body>
+</html>

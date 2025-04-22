@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subjects - AI Tutor</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/subjects.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <h1>AI Tutor</h1>
+            <div class="user-controls">
+                <span id="userName"></span>
+                <button class="btn btn-logout" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div id="loadingSubjects" class="loading">
+            <div class="spinner"></div>
+            <p>Loading subjects...</p>
+        </div>
+
+        <div id="errorContainer" class="error-container hidden"></div>
+
+        <div id="welcomeMessage" class="welcome-message hidden">
+            <h2>Welcome to AI Tutor</h2>
+            <p>Select a subject and topic to start learning</p>
+        </div>
+
+        <div id="subjectsGrid" class="subjects-grid hidden"></div>
+    </main>
+
+    <script src="/js/auth.js"></script>
+    <script>
+        // Get user profile and display name
+        async function loadUserProfile() {
+            try {
+                const response = await authFetch('/api/auth/profile');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('userName').textContent = `Welcome, ${data.data.user.name}`;
+                }
+            } catch (error) {
+                console.error('Error loading user profile:', error);
+            }
+        }
+
+        // Load and display subjects
+        async function loadSubjects() {
+            try {
+                const response = await authFetch('/api/subjects');
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to load subjects');
+                }
+
+                const subjectsGrid = document.getElementById('subjectsGrid');
+                subjectsGrid.innerHTML = data.data.map(subject => `
+                    <div class="subject-card">
+                        <h2>${subject.name}</h2>
+                        <ul class="topics-list">
+                            ${subject.topics.map(topic => `
+                                <li>
+                                    <div class="topic-item">
+                                        <span class="topic-name">${topic.name}</span>
+                                        <a href="/chat.html?subject=${subject._id}&topic=${encodeURIComponent(topic.name)}" 
+                           class="start-chat">Start Learning</a>
+                                    </div>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `).join('');
+
+                document.getElementById('loadingSubjects').classList.add('hidden');
+                document.getElementById('welcomeMessage').classList.remove('hidden');
+                subjectsGrid.classList.remove('hidden');
+            } catch (error) {
+                document.getElementById('loadingSubjects').classList.add('hidden');
+                const errorContainer = document.getElementById('errorContainer');
+                errorContainer.textContent = error.message;
+                errorContainer.classList.remove('hidden');
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            // Verify authentication
+            checkAuth();
+            
+            // Load data
+            loadUserProfile();
+            loadSubjects();
+        });
+    </script>
+</body>
+</html>

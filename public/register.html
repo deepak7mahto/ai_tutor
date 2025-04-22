@@ -3,76 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - AI Tutor</title>
+    <title>Register - AI Tutor</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
     <div class="container">
         <div class="auth-container">
-            <h1 class="text-center mb-4">AI Tutor Login</h1>
-            <form id="loginForm">
+            <h1 class="text-center mb-4">Create Account</h1>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
                 <div class="form-group">
                     <label for="email">Email</label>
                     <input type="email" id="email" name="email" required>
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required>
+                    <input type="password" id="password" name="password" required minlength="6">
+                    <small>Password must be at least 6 characters long</small>
                 </div>
                 <div id="errorMessage" class="error-message hidden"></div>
+                <div id="successMessage" class="success-message hidden"></div>
                 <button type="submit" class="btn btn-primary btn-block">
                     <span class="spinner hidden"></span>
-                    <span class="button-text">Login</span>
+                    <span class="button-text">Register</span>
                 </button>
             </form>
             <div class="auth-switch">
-                Don't have an account? <a href="/register.html">Register</a>
+                Already have an account? <a href="/index.html">Login</a>
             </div>
         </div>
     </div>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const buttonText = document.querySelector('.button-text');
             const spinner = document.querySelector('.spinner');
             const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
             
             // Show loading state
-            buttonText.textContent = 'Logging in...';
+            buttonText.textContent = 'Registering...';
             spinner.classList.remove('hidden');
             errorMessage.classList.add('hidden');
+            successMessage.classList.add('hidden');
 
+            const name = document.getElementById('name').value;
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
             try {
-                const response = await fetch('/api/auth/login', {
+                const response = await fetch('/api/auth/register', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify({ name, email, password })
                 });
 
                 const data = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(data.message || 'Login failed');
+                    throw new Error(data.message || 'Registration failed');
                 }
+
+                // Show success message
+                successMessage.textContent = 'Registration successful! Redirecting to login...';
+                successMessage.classList.remove('hidden');
 
                 // Store token
                 localStorage.setItem('token', data.data.token);
                 
-                // Redirect to subjects page
-                window.location.href = '/subjects.html';
+                // Redirect to subjects page after a short delay
+                setTimeout(() => {
+                    window.location.href = '/subjects.html';
+                }, 1500);
             } catch (error) {
                 errorMessage.textContent = error.message;
                 errorMessage.classList.remove('hidden');
             } finally {
                 // Reset button state
-                buttonText.textContent = 'Login';
+                buttonText.textContent = 'Register';
                 spinner.classList.add('hidden');
             }
         });
