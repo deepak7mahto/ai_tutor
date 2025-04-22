@@ -11,6 +11,18 @@ interface NetlifyResponse {
 
 // Export the handler for Netlify Functions
 export const handler: Handler = async (event, context) => {
+  // Parse the body for POST/PUT requests
+  if (event.body && (event.httpMethod === 'POST' || event.httpMethod === 'PUT')) {
+    try {
+      event.body = JSON.parse(event.body);
+    } catch (error) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: 'Invalid JSON payload' })
+      };
+    }
+  }
+
   // Add headers for CORS
   const response = await serverHandler(event, context) as NetlifyResponse;
   

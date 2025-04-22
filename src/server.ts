@@ -1,4 +1,11 @@
 import express, { Request, Response } from 'express';
+import { APIGatewayEvent } from 'aws-lambda';
+
+interface NetlifyRequest extends Request {
+  apiGateway?: {
+    event: APIGatewayEvent;
+  };
+}
 import serverless from 'serverless-http';
 import dotenv from 'dotenv';
 import connectDB from './config/database';
@@ -16,13 +23,22 @@ const app = express();
 
 // Connect to MongoDB and initialize data
 connectDB()
+  .then(() => console.log('Connected to MongoDB'))
   .then(async () => {
     const { initializeSubjects } = await import('./config/defaultSubjects');
     return initializeSubjects();
   })
   .catch(console.error);
 
-// Middleware
+// Middleware for parsing JSON from Netlify Functions
+app.use((req: NetlifyRequest, res: Response, next) => {
+  if (req.apiGateway?.event?.body) {
+    req.body = req.apiGateway.event.body;
+  }
+  next();
+});
+
+// Standard middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

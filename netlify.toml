@@ -4,6 +4,10 @@
   command = "npm run build"
   functionsSource = "functions"
 
+[functions]
+  external_node_modules = ["express"]
+  node_bundler = "esbuild"
+
 [dev]
   functions = "functions"
   publish = "public"
