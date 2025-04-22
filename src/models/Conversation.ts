@@ -1,7 +1,15 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+interface MessageContent {
+  type: 'text' | 'image_url';
+  text?: string;
+  image_url?: {
+    url: string;
+  };
+}
+
 interface IMessage {
-  content: string;
+  content: string | MessageContent[];
   role: 'user' | 'assistant';
   timestamp: Date;
 }
@@ -18,8 +26,18 @@ export interface IConversation extends Document {
 
 const messageSchema = new Schema<IMessage>({
   content: {
-    type: String,
-    required: [true, 'Message content is required']
+    type: Schema.Types.Mixed,
+    required: [true, 'Message content is required'],
+    validate: {
+      validator: function(v: any) {
+        return typeof v === 'string' || 
+               (Array.isArray(v) && v.every(item => 
+                 (item.type === 'text' && typeof item.text === 'string') ||
+                 (item.type === 'image_url' && typeof item.image_url?.url === 'string')
+               ));
+      },
+      message: 'Content must be either a string or an array of valid message content objects'
+    }
   },
   role: {
     type: String,

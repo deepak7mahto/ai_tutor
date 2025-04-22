@@ -4,10 +4,18 @@ import Subject from '../models/Subject';
 import { IUser } from '../models/User';
 import { AIService } from '../services/ai';
 
+interface MessageContent {
+  type: 'text' | 'image_url';
+  text?: string;
+  image_url?: {
+    url: string;
+  };
+}
+
 interface ChatRequest extends Request {
   user?: IUser;
   body: {
-    message: string;
+    message: string | { text?: string; image?: string };
     subjectId: string;
     topic: string;
     conversationId?: string;
@@ -86,8 +94,21 @@ export const sendMessage = async (req: ChatRequest, res: Response): Promise<void
     }
 
     // Add user message
+    const userMessageContent = typeof message === 'string' ? message : [
+      ...(message.text ? [{
+        type: 'text' as const,
+        text: message.text
+      }] : []),
+      ...(message.image ? [{
+        type: 'image_url' as const,
+        image_url: {
+          url: message.image
+        }
+      }] : [])
+    ];
+
     conversation.messages.push({
-      content: message,
+      content: userMessageContent,
       role: 'user',
       timestamp: new Date()
     });
@@ -97,10 +118,23 @@ export const sendMessage = async (req: ChatRequest, res: Response): Promise<void
       message,
       subject.name,
       topic,
-      conversation.messages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }))
+      conversation.messages.map(msg => {
+        if (typeof msg.content === 'string') {
+          return {
+            role: msg.role,
+            content: msg.content
+          };
+        } else {
+          // Convert array content to string for context
+          return {
+            role: msg.role,
+            content: msg.content
+              .filter(c => c.type === 'text')
+              .map(c => (c as { text: string }).text)
+              .join('\n')
+          };
+        }
+      })
     );
     
     // Add AI response

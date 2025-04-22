@@ -12,45 +12,96 @@ interface AIResponse {
   error?: string;
 }
 
-type MessageRole = 'system' | 'user' | 'assistant';
+interface MessageContent {
+  type: 'text' | 'image_url';
+  text?: string;
+  image_url?: {
+    url: string;
+  };
+}
 
-interface ChatMessage {
-  role: MessageRole;
+interface StoredMessage {
+  role: string;
   content: string;
 }
+
+type ImageURL = {
+  url: string;
+}
+
+type ChatContentText = {
+  type: 'text';
+  text: string;
+}
+
+type ChatContentImage = {
+  type: 'image_url';
+  image_url: ImageURL;
+}
+
+type ChatContent = ChatContentText | ChatContentImage;
+
+type ChatMessage = {
+  role: 'system';
+  content: string;
+} | {
+  role: 'user';
+  content: string | ChatContent[];
+} | {
+  role: 'assistant';
+  content: string;
+};
 
 import { prompts } from '../prompts/ai-tutor';
 
 export class AIService {
 
   static async getResponse(
-    message: string,
+    message: string | { text?: string; image?: string },
     subject: string,
     topic: string,
-    previousMessages: Array<{ content: string; role: string }> = []
+    previousMessages: StoredMessage[] = []
   ): Promise<AIResponse> {
     try {
       const systemPrompt = prompts.systemPrompt(subject, topic);
-      const contextPrompt = prompts.contextPrompt(previousMessages);
+      // Convert previous messages to string content for context
+      const textMessages = previousMessages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+      
+      const contextPrompt = prompts.contextPrompt(textMessages);
 
-      const messages: ChatMessage[] = [
+      const messages = [
         {
-          role: 'system',
+          role: 'system' as const,
           content: systemPrompt
         },
         ...previousMessages.map(msg => ({
-          role: msg.role === 'user' ? 'user' : 'assistant',
+          role: msg.role === 'user' ? 'user' as const : 'assistant' as const,
           content: msg.content
-        } as ChatMessage)),
+        })),
         {
-          role: 'user',
-          content: message
+          role: 'user' as const,
+          content: typeof message === 'string' ? message : 
+            ([] as ChatContent[]).concat(
+              message.text ? [{
+                type: 'text',
+                text: message.text
+              }] : [],
+              message.image ? [{
+                type: 'image_url',
+                image_url: {
+                  url: message.image
+                }
+              }] : []
+            )
         }
       ];
 
       const completion = await groq.chat.completions.create({
         messages,
-        model: "llama-3.3-70b-versatile",
+        model: "meta-llama/llama-4-scout-17b-16e-instruct" as const,
         temperature: 0.7,
         max_tokens: 1000,
         top_p: 1,
@@ -82,11 +133,11 @@ export class AIService {
       const completion = await groq.chat.completions.create({
         messages: [
           {
-            role: 'user',
+            role: 'user' as const,
             content: prompt
           }
         ],
-        model: "llama-3.3-70b-versatile",
+        model: "meta-llama/llama-4-scout-17b-16e-instruct" as const,
         temperature: 0.1,
         max_tokens: 10
       });
