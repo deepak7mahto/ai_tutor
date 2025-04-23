@@ -54,16 +54,26 @@ type ChatMessage = {
 
 import { prompts } from '../prompts/ai-tutor';
 
+interface TopicContext {
+  name: string;
+  description: string;
+}
+
+interface SubjectContext {
+  name: string;
+  fullName: string;
+  topic: TopicContext;
+}
+
 export class AIService {
 
   static async getResponse(
     message: string | { text?: string; image?: string },
-    subject: string,
-    topic: string,
+    subjectContext: SubjectContext,
     previousMessages: StoredMessage[] = []
   ): Promise<AIResponse> {
     try {
-      const systemPrompt = prompts.systemPrompt(subject, topic);
+      const systemPrompt = prompts.systemPrompt(subjectContext);
       // Convert previous messages to string content for context
       const textMessages = previousMessages.map(msg => ({
         role: msg.role,
@@ -126,9 +136,9 @@ export class AIService {
     }
   }
 
-  static async validateSubjectKnowledge(subject: string, topic: string): Promise<boolean> {
+  static async validateSubjectKnowledge(subjectContext: SubjectContext): Promise<boolean> {
     try {
-      const prompt = prompts.validateKnowledge(subject, topic);
+      const prompt = prompts.validateKnowledge(subjectContext);
       
       const completion = await groq.chat.completions.create({
         messages: [

@@ -4,6 +4,31 @@ import Subject from '../models/Subject';
 import { IUser } from '../models/User';
 import { AIService } from '../services/ai';
 
+interface TopicContext {
+  name: string;
+  description: string;
+}
+
+interface SubjectContext {
+  name: string;
+  fullName: string;
+  topic: TopicContext;
+}
+
+const createSubjectContext = (subject: any, topicName: string): SubjectContext | null => {
+  const topic = subject.topics.find((t: any) => t.name === topicName);
+  if (!topic) return null;
+
+  return {
+    name: subject.name,
+    fullName: subject.fullName,
+    topic: {
+      name: topic.name,
+      description: topic.description
+    }
+  };
+};
+
 interface GreetingRequest extends Request {
   user?: IUser;
   query: {
@@ -36,11 +61,20 @@ export const getInitialGreeting = async (req: GreetingRequest, res: Response): P
       return;
     }
 
+    // Create subject context
+    const subjectContext = createSubjectContext(subject, topic);
+    if (!subjectContext) {
+      res.status(404).json({
+        success: false,
+        message: 'Topic not found in subject'
+      });
+      return;
+    }
+
     // Get AI greeting
     const greetingResponse = await AIService.getResponse(
       "start_conversation",
-      subject.name,
-      topic,
+      subjectContext,
       []
     );
 
@@ -133,10 +167,18 @@ export const sendMessage = async (req: ChatRequest, res: Response): Promise<void
 
     // For new conversations, get AI greeting first
     if (isNewConversation) {
+      const subjectContext = createSubjectContext(subject, topic);
+      if (!subjectContext) {
+        res.status(404).json({
+          success: false,
+          message: 'Topic not found in subject'
+        });
+        return;
+      }
+
       const greetingResponse = await AIService.getResponse(
         "start_conversation",
-        subject.name,
-        topic,
+        subjectContext,
         []
       );
 
@@ -170,13 +212,21 @@ export const sendMessage = async (req: ChatRequest, res: Response): Promise<void
     });
 
     // Get AI response to user's message
+    const subjectContext = createSubjectContext(subject, topic);
+    if (!subjectContext) {
+      res.status(404).json({
+        success: false,
+        message: 'Topic not found in subject'
+      });
+      return;
+    }
+
     const aiResponse = await AIService.getResponse(
       {
         text: message,
         image: image
       },
-      subject.name,
-      topic,
+      subjectContext,
       conversation.messages.map(msg => {
         if (Array.isArray(msg.content)) {
           // For messages with array content (user messages with images)
