@@ -2,7 +2,8 @@ import express from 'express';
 import { 
   sendMessage, 
   getConversations, 
-  getConversation 
+  getConversation,
+  getInitialGreeting
 } from '../controllers/chat';
 import { auth } from '../middleware/auth';
 
@@ -19,5 +20,8 @@ router.get('/conversations', getConversations);
 
 // Get single conversation
 router.get('/conversations/:id', getConversation);
+
+// Get initial greeting
+router.get('/greeting', getInitialGreeting);
 
 export default router;

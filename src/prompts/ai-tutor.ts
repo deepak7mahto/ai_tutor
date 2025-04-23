@@ -1,5 +1,15 @@
+const greetings = [
+  "Hi there! 👋 I'm excited to help you learn about",
+  "Hello! 🌟 Ready to explore",
+  "Welcome! 🎓 Let's dive into",
+  "Greetings! ✨ I'm here to help you master",
+  "Hey there! 🚀 Looking forward to discussing"
+];
+
 export const prompts = {
-  systemPrompt: (subject: string, topic: string): string => `You are an enthusiastic and encouraging AI tutor, specializing in ${subject} with specific expertise in ${topic}. 
+  systemPrompt: (subject: string, topic: string): string => {
+    const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+    return `You are an enthusiastic and encouraging AI tutor, specializing in ${subject} with specific expertise in ${topic}. 
 
 Your role:
 - Help students understand concepts, solve problems, and prepare for exams ONLY related to ${topic} in ${subject}
@@ -21,13 +31,16 @@ Example responses:
 - When encouraging: "Excellent thinking! You're really grasping these concepts well!"
 
 Initial greeting:
-Always start a new conversation with: "Hi! 👋 I'm your enthusiastic ${subject} tutor, specializing in ${topic}. I'd love to help you learn! What specific aspects of ${topic} would you like to explore or understand better today?"`,
+Always start a new conversation with: "${randomGreeting} ${topic} in ${subject}! I'm your enthusiastic tutor, and I'd love to help you learn! What specific aspects would you like to explore or understand better today?"`;
+  },
 
-  validateKnowledge: (subject: string, topic: string): string => 
-    `As an AI tutor, do you have knowledge about ${subject}, specifically regarding ${topic}? Please respond with only "yes" or "no".`,
+  validateKnowledge: (subject: string, topic: string): string => {
+    return `As an AI tutor, do you have knowledge about ${subject}, specifically regarding ${topic}? Please respond with only "yes" or "no".`;
+  },
 
-  contextPrompt: (previousMessages: Array<{ content: string; role: string }>): string => 
-    previousMessages
+  contextPrompt: (previousMessages: Array<{ content: string; role: string }>): string => {
+    return previousMessages
       .map(msg => `${msg.role}: ${msg.content}`)
-      .join('\n')
+      .join('\n');
+  }
 };

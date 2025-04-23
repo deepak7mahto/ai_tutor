@@ -4,6 +4,61 @@ import Subject from '../models/Subject';
 import { IUser } from '../models/User';
 import { AIService } from '../services/ai';
 
+interface GreetingRequest extends Request {
+  user?: IUser;
+  query: {
+    subjectId: string;
+    topic: string;
+  };
+}
+
+// Get initial greeting when chat page loads
+export const getInitialGreeting = async (req: GreetingRequest, res: Response): Promise<void> => {
+  try {
+    const { subjectId, topic } = req.query;
+    const userId = req.user?._id;
+
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
+      });
+      return;
+    }
+
+    // Validate subject exists
+    const subject = await Subject.findById(subjectId);
+    if (!subject) {
+      res.status(404).json({
+        success: false,
+        message: 'Subject not found'
+      });
+      return;
+    }
+
+    // Get AI greeting
+    const greetingResponse = await AIService.getResponse(
+      "start_conversation",
+      subject.name,
+      topic,
+      []
+    );
+
+    res.json({
+      success: true,
+      data: {
+        greeting: greetingResponse.content
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Error generating greeting',
+      error: error.message
+    });
+  }
+};
+
 interface MessageContent {
   type: 'text' | 'image_url';
   text?: string;

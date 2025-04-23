@@ -165,6 +165,23 @@
           document.getElementById("subjectName").textContent = data.data.name;
           document.getElementById("topicName").textContent =
             decodeURIComponent(topic);
+            
+          // Fetch initial greeting
+          const greetingResponse = await authFetch(`/api/chat/greeting?subjectId=${subjectId}&topic=${encodeURIComponent(topic)}`);
+          const greetingData = await greetingResponse.json();
+          
+          if (greetingData.success) {
+            // Show typing indicator
+            const typingIndicator = document.getElementById("typingIndicator");
+            typingIndicator.classList.remove("hidden");
+            
+            // Add slight delay to simulate typing
+            setTimeout(() => {
+              // Hide typing indicator and show greeting
+              typingIndicator.classList.add("hidden");
+              addMessage(greetingData.data.greeting, false);
+            }, 1000);
+          }
         } catch (error) {
           console.error("Error initializing chat:", error);
           alert("Failed to load chat. Redirecting to subjects page...");
