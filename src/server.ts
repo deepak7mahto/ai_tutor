@@ -1,11 +1,6 @@
 import express, { Request, Response } from 'express';
 import { APIGatewayEvent } from 'aws-lambda';
-
-interface NetlifyRequest extends Request {
-  apiGateway?: {
-    event: APIGatewayEvent;
-  };
-}
+import { NetlifyRequest } from './types/request';
 import serverless from 'serverless-http';
 import dotenv from 'dotenv';
 import connectDB from './config/database';

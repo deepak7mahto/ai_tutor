@@ -6,16 +6,7 @@ const greetings = [
   "Hey there! 🚀 Looking forward to discussing"
 ];
 
-interface TopicContext {
-  name: string;
-  description: string;
-}
-
-interface SubjectContext {
-  name: string;
-  fullName: string;
-  topic: TopicContext;
-}
+import { TopicContext, SubjectContext, StoredMessage } from '../types/ai';
 
 export const prompts = {
   systemPrompt: (subjectContext: SubjectContext): string => {
@@ -54,9 +45,14 @@ Always start a new conversation with: "${randomGreeting} ${topic.name} in ${subj
     return `As an AI tutor, do you have knowledge about ${subjectFullName}, specifically regarding ${topic.name}? Please respond with only "yes" or "no".`;
   },
 
-  contextPrompt: (previousMessages: Array<{ content: string; role: string }>): string => {
+  contextPrompt: (previousMessages: StoredMessage[]): string => {
     return previousMessages
-      .map(msg => `${msg.role}: ${msg.content}`)
+      .map(msg => {
+        const content = Array.isArray(msg.content)
+          ? msg.content.filter(c => c.type === 'text').map(c => c.text).join('\n')
+          : msg.content;
+        return `${msg.role}: ${content}`;
+      })
       .join('\n');
   }
 };

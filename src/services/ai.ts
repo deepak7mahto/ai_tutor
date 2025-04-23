@@ -7,63 +7,13 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
 });
 
-interface AIResponse {
-  content: string;
-  error?: string;
-}
-
-interface MessageContent {
-  type: 'text' | 'image_url';
-  text?: string;
-  image_url?: {
-    url: string;
-  };
-}
-
-interface StoredMessage {
-  role: string;
-  content: string;
-}
-
-type ImageURL = {
-  url: string;
-}
-
-type ChatContentText = {
-  type: 'text';
-  text: string;
-}
-
-type ChatContentImage = {
-  type: 'image_url';
-  image_url: ImageURL;
-}
-
-type ChatContent = ChatContentText | ChatContentImage;
+import { prompts } from '../prompts/ai-tutor';
+import { AIResponse, MessageContent, StoredMessage, TopicContext, SubjectContext } from '../types/ai';
 
 type ChatMessage = {
-  role: 'system';
-  content: string;
-} | {
-  role: 'user';
-  content: string | ChatContent[];
-} | {
-  role: 'assistant';
+  role: 'system' | 'user' | 'assistant';
   content: string;
 };
-
-import { prompts } from '../prompts/ai-tutor';
-
-interface TopicContext {
-  name: string;
-  description: string;
-}
-
-interface SubjectContext {
-  name: string;
-  fullName: string;
-  topic: TopicContext;
-}
 
 export class AIService {
 
@@ -75,37 +25,25 @@ export class AIService {
     try {
       const systemPrompt = prompts.systemPrompt(subjectContext);
       // Convert previous messages to string content for context
+      // Convert stored messages to string format
       const textMessages = previousMessages.map(msg => ({
         role: msg.role,
-        content: msg.content
+        content: Array.isArray(msg.content)
+          ? msg.content.filter(c => c.type === 'text').map(c => c.text).join('\n')
+          : msg.content
       }));
-      
-      const contextPrompt = prompts.contextPrompt(textMessages);
 
-      const messages = [
+      const messages: ChatMessage[] = [
         {
-          role: 'system' as const,
+          role: 'system',
           content: systemPrompt
         },
-        ...previousMessages.map(msg => ({
-          role: msg.role === 'user' ? 'user' as const : 'assistant' as const,
-          content: msg.content
-        })),
+        ...textMessages,
         {
-          role: 'user' as const,
-          content: typeof message === 'string' ? message : 
-            ([] as ChatContent[]).concat(
-              message.text ? [{
-                type: 'text',
-                text: message.text
-              }] : [],
-              message.image ? [{
-                type: 'image_url',
-                image_url: {
-                  url: message.image
-                }
-              }] : []
-            )
+          role: 'user',
+          content: typeof message === 'string' 
+            ? message 
+            : message.text || ''
         }
       ];
 

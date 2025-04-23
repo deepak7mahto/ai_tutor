@@ -1,14 +1,17 @@
 import { Request, Response } from 'express';
-import Subject, { ISubject } from '../models/Subject';
+import Subject from '../models/Subject';
+import { SubjectRequest } from '../types/request';
 
-interface SubjectRequest extends Request {
-  body: {
-    name: string;
-    topics: Array<{
-      name: string;
-      description: string;
-    }>;
-  };
+function assertSubjectRequest(req: Request): asserts req is SubjectRequest {
+  const { name, topics } = req.body;
+  if (!name || !Array.isArray(topics)) {
+    throw new Error('Invalid subject request');
+  }
+  for (const topic of topics) {
+    if (!topic.name || !topic.description) {
+      throw new Error('Invalid topic format');
+    }
+  }
 }
 
 // Get all subjects
@@ -56,8 +59,9 @@ export const getSubjectById = async (req: Request, res: Response): Promise<void>
 };
 
 // Create new subject
-export const createSubject = async (req: SubjectRequest, res: Response): Promise<void> => {
+export const createSubject = async (req: Request, res: Response): Promise<void> => {
   try {
+    assertSubjectRequest(req);
     const { name, topics } = req.body;
 
     // Check if subject already exists
@@ -91,8 +95,9 @@ export const createSubject = async (req: SubjectRequest, res: Response): Promise
 };
 
 // Update subject
-export const updateSubject = async (req: SubjectRequest, res: Response): Promise<void> => {
+export const updateSubject = async (req: Request, res: Response): Promise<void> => {
   try {
+    assertSubjectRequest(req);
     const { name, topics } = req.body;
     const subject = await Subject.findById(req.params.id);
 

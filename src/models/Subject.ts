@@ -1,9 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-
-interface ITopic {
-  name: string;
-  description: string;
-}
+import { ITopic } from '../types/subject';
 
 export interface ISubject extends Document {
   name: string;

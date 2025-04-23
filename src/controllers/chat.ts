@@ -3,17 +3,8 @@ import Conversation from '../models/Conversation';
 import Subject from '../models/Subject';
 import { IUser } from '../models/User';
 import { AIService } from '../services/ai';
-
-interface TopicContext {
-  name: string;
-  description: string;
-}
-
-interface SubjectContext {
-  name: string;
-  fullName: string;
-  topic: TopicContext;
-}
+import { TopicContext, SubjectContext, MessageContent } from '../types/ai';
+import { ChatRequest, GreetingRequest } from '../types/request';
 
 const createSubjectContext = (subject: any, topicName: string): SubjectContext | null => {
   const topic = subject.topics.find((t: any) => t.name === topicName);
@@ -28,14 +19,6 @@ const createSubjectContext = (subject: any, topicName: string): SubjectContext |
     }
   };
 };
-
-interface GreetingRequest extends Request {
-  user?: IUser;
-  query: {
-    subjectId: string;
-    topic: string;
-  };
-}
 
 // Get initial greeting when chat page loads
 export const getInitialGreeting = async (req: GreetingRequest, res: Response): Promise<void> => {
@@ -92,25 +75,6 @@ export const getInitialGreeting = async (req: GreetingRequest, res: Response): P
     });
   }
 };
-
-interface MessageContent {
-  type: 'text' | 'image_url';
-  text?: string;
-  image_url?: {
-    url: string;
-  };
-}
-
-interface ChatRequest extends Request {
-  user?: IUser;
-  body: {
-    message: string;
-    subjectId: string;
-    topic: string;
-    conversationId?: string;
-    image?: string;
-  };
-}
 
 // Start new conversation or continue existing one
 export const sendMessage = async (req: ChatRequest, res: Response): Promise<void> => {

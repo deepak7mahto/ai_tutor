@@ -1,13 +1,6 @@
 import { Request, Response } from 'express';
 import User from '../models/User';
-
-interface AuthRequest extends Request {
-  body: {
-    email: string;
-    password: string;
-    name?: string;
-  };
-}
+import { AuthRequest } from '../types/request';
 
 export const register = async (req: AuthRequest, res: Response): Promise<void> => {
   try {

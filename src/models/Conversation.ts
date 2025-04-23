@@ -1,18 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-interface MessageContent {
-  type: 'text' | 'image_url';
-  text?: string;
-  image_url?: {
-    url: string;
-  };
-}
-
-interface IMessage {
-  content: string | MessageContent[];
-  role: 'user' | 'assistant';
-  timestamp: Date;
-}
+import { MessageContent, IMessage } from '../types/ai';
 
 export interface IConversation extends Document {
   userId: mongoose.Types.ObjectId;
@@ -41,7 +29,7 @@ const messageSchema = new Schema<IMessage>({
   },
   role: {
     type: String,
-    enum: ['user', 'assistant'],
+    enum: ['user', 'assistant', 'system'],
     required: true
   },
   timestamp: {
