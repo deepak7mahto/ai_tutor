@@ -63,17 +63,48 @@
                     throw new Error(data.message || 'Failed to load subjects');
                 }
 
+                const examIcons = {
+                    'UPSC': ['🏛️', '🇮🇳'],
+                    'IIT JEE': ['⚙️', '🔬'],
+                    'NDA': ['🛡️', '💂'],
+                    'UGC-NET': ['🎓', '📚'],
+                    'IES/ESE': ['👷', '🌉'],
+                    'CLAT': ['⚖️', '📜'],
+                    'CA': ['📈', '🧮'],
+                    'NEET': ['🩺', '🧬'],
+                    'CAT': ['💼', '📊'],
+                    'GATE': ['🎓', '⚙️'],
+                    'IBPS PO': ['🏦', '💰'],
+                    'SBI PO': ['🏦', '⭐'],
+                    'SSC CGL': ['✍️', '🏛️'],
+                    'CDS': ['⚔️', '🎖️'],
+                    'RBI Grade B': ['💲', '🏦'],
+                    'CTET': ['👨‍🏫', '🏫'],
+                    'default': ['📝', '📚']
+                };
+
                 const subjectsGrid = document.getElementById('subjectsGrid');
                 subjectsGrid.innerHTML = data.data.map(subject => `
                     <div class="subject-card">
-                        <h2>${subject.name}</h2>
+                        <div class="subject-header" onclick="toggleAccordion(this)">
+                            <div class="subject-icons">
+                                <div class="subject-icon">
+                                    ${(examIcons[subject.name] || examIcons['default'])[0]}
+                                </div>
+                                <div class="subject-icon">
+                                    ${(examIcons[subject.name] || examIcons['default'])[1]}
+                                </div>
+                            </div>
+                            <h2>${subject.name}</h2>
+                            <span class="toggle-icon">▼</span>
+                        </div>
                         <ul class="topics-list">
                             ${subject.topics.map(topic => `
                                 <li>
                                     <div class="topic-item">
                                         <span class="topic-name">${topic.name}</span>
                                         <a href="/chat.html?subject=${subject._id}&topic=${encodeURIComponent(topic.name)}" 
-                           class="start-chat">Start Learning</a>
+                                           class="start-chat">Start Learning</a>
                                     </div>
                                 </li>
                             `).join('')}
@@ -89,6 +120,22 @@
                 const errorContainer = document.getElementById('errorContainer');
                 errorContainer.textContent = error.message;
                 errorContainer.classList.remove('hidden');
+            }
+        }
+
+        // Toggle accordion sections
+        function toggleAccordion(header) {
+            const card = header.parentElement;
+            const currentlyExpanded = card.classList.contains('expanded');
+            
+            // Collapse all cards
+            document.querySelectorAll('.subject-card').forEach(card => {
+                card.classList.remove('expanded');
+            });
+            
+            // Expand clicked card if it wasn't expanded
+            if (!currentlyExpanded) {
+                card.classList.add('expanded');
             }
         }
 
