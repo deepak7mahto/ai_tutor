@@ -10,41 +10,51 @@ const groq = new Groq({
 import { prompts } from '../prompts/ai-tutor';
 import { AIResponse, MessageContent, StoredMessage, TopicContext, SubjectContext } from '../types/ai';
 
-type ChatMessage = {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-};
-
 export class AIService {
 
   static async getResponse(
-    message: string | { text?: string; image?: string },
+    message: string | { text?: string; image?: string } | MessageContent[],
     subjectContext: SubjectContext,
     previousMessages: StoredMessage[] = []
   ): Promise<AIResponse> {
     try {
       const systemPrompt = prompts.systemPrompt(subjectContext);
-      // Convert previous messages to string content for context
-      // Convert stored messages to string format
-      const textMessages = previousMessages.map(msg => ({
+      
+      // Handle previous messages
+      const formattedPreviousMessages = previousMessages.map(msg => ({
         role: msg.role,
-        content: Array.isArray(msg.content)
-          ? msg.content.filter(c => c.type === 'text').map(c => c.text).join('\n')
-          : msg.content
+        content: Array.isArray(msg.content) ? msg.content : msg.content
       }));
 
-      const messages: ChatMessage[] = [
+      // Format current message
+      let currentMessage: any;
+      if (typeof message === 'string') {
+        currentMessage = {
+          role: 'user',
+          content: [{ type: 'text', text: message }]
+        };
+      } else if (Array.isArray(message)) {
+        currentMessage = {
+          role: 'user',
+          content: message
+        };
+      } else {
+        currentMessage = {
+          role: 'user',
+          content: [
+            ...(message.text ? [{ type: 'text', text: message.text }] : []),
+            ...(message.image ? [{ type: 'image_url', image_url: { url: message.image } }] : [])
+          ]
+        };
+      }
+
+      const messages = [
         {
           role: 'system',
           content: systemPrompt
         },
-        ...textMessages,
-        {
-          role: 'user',
-          content: typeof message === 'string' 
-            ? message 
-            : message.text || ''
-        }
+        ...formattedPreviousMessages,
+        currentMessage
       ];
 
       const completion = await groq.chat.completions.create({
