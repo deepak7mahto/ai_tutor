@@ -45,13 +45,29 @@
 
       <div class="chat-input">
         <form id="chatForm" class="chat-form">
-          <textarea
-            id="messageInput"
-            placeholder="Type your question here... (Press Enter to send, Shift+Enter for new line)"
-            rows="2"
-            required
-            onkeydown="handleKeyDown(event)"
-          ></textarea>
+          <div class="input-container">
+            <textarea
+              id="messageInput"
+              placeholder="Type your question here... (Press Enter to send, Shift+Enter for new line)"
+              rows="2"
+              required
+              onkeydown="handleKeyDown(event)"
+            ></textarea>
+            <input 
+              type="file" 
+              id="imageInput" 
+              accept="image/*" 
+              style="display: none;"
+              onchange="handleImageSelect(event)"
+            />
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('imageInput').click()">
+              📷
+            </button>
+          </div>
+          <div id="imagePreview" style="display: none;">
+            <img id="selectedImage" style="max-height: 100px; margin: 10px 0;"/>
+            <button type="button" class="btn btn-secondary" onclick="removeImage()">✕</button>
+          </div>
           <button type="submit" class="btn btn-primary send-button">
             <span class="spinner hidden"></span>
             <span class="button-text">Send</span>
@@ -209,6 +225,27 @@
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
       }
 
+      let selectedImageBase64 = null;
+
+      function handleImageSelect(event) {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            selectedImageBase64 = reader.result;
+            document.getElementById('selectedImage').src = reader.result;
+            document.getElementById('imagePreview').style.display = 'flex';
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+
+      function removeImage() {
+        selectedImageBase64 = null;
+        document.getElementById('imageInput').value = '';
+        document.getElementById('imagePreview').style.display = 'none';
+      }
+
       // Handle form submission
       document
         .getElementById("chatForm")
@@ -217,7 +254,11 @@
 
           const messageInput = document.getElementById("messageInput");
           const message = messageInput.value.trim();
-          if (!message) return;
+          
+          if (!message && !selectedImageBase64) {
+            alert('Please enter a message or upload an image');
+            return;
+          }
 
           const buttonText = document.querySelector(".button-text");
           const spinner = document.querySelector(".spinner");
@@ -230,18 +271,30 @@
 
           // Add user message to chat
           addMessage(message, true);
+          if (selectedImageBase64) {
+            const imgElement = document.createElement('img');
+            imgElement.src = selectedImageBase64;
+            imgElement.style.maxHeight = '100px';
+            imgElement.style.borderRadius = '4px';
+            imgElement.style.marginTop = '0.5rem';
+            const lastMessage = document.querySelector('.message:last-child');
+            lastMessage?.appendChild(imgElement);
+          }
           messageInput.value = "";
 
           try {
+            const requestBody = {
+              message,
+              subjectId,
+              topic,
+              conversationId: currentConversationId,
+              image: selectedImageBase64,
+            };
+
 
             const response = await authFetch("/api/chat/message", {
               method: "POST",
-              body: JSON.stringify({
-                message,
-                subjectId,
-                topic,
-                conversationId: currentConversationId,
-              }),
+              body: JSON.stringify(requestBody),
             });
 
             const data = await response.json();
@@ -249,6 +302,7 @@
             if (!data.success) {
               throw new Error(data.message || "Failed to send message");
             }
+
 
             // Update conversation ID
             currentConversationId = data.data.conversation._id;
@@ -264,6 +318,9 @@
 
             // Refresh conversations list
             loadConversations();
+            
+            // Clear image only after successful send
+            removeImage();
           } catch (error) {
             console.error("Error sending message:", error);
             addMessage("⚠️ Failed to get response. Please try again.", false);

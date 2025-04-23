@@ -70,17 +70,18 @@ interface MessageContent {
 interface ChatRequest extends Request {
   user?: IUser;
   body: {
-    message: string | { text?: string; image?: string };
+    message: string;
     subjectId: string;
     topic: string;
     conversationId?: string;
+    image?: string;
   };
 }
 
 // Start new conversation or continue existing one
 export const sendMessage = async (req: ChatRequest, res: Response): Promise<void> => {
   try {
-    const { message, subjectId, topic, conversationId } = req.body;
+    const { message, subjectId, topic, conversationId, image } = req.body;
     const userId = req.user?._id;
 
     if (!userId) {
@@ -149,15 +150,15 @@ export const sendMessage = async (req: ChatRequest, res: Response): Promise<void
     }
 
     // Add user message
-    const userMessageContent = typeof message === 'string' ? message : [
-      ...(message.text ? [{
+    const userMessageContent = [
+      {
         type: 'text' as const,
-        text: message.text
-      }] : []),
-      ...(message.image ? [{
+        text: message
+      },
+      ...(image ? [{
         type: 'image_url' as const,
         image_url: {
-          url: message.image
+          url: image
         }
       }] : [])
     ];
@@ -170,25 +171,28 @@ export const sendMessage = async (req: ChatRequest, res: Response): Promise<void
 
     // Get AI response to user's message
     const aiResponse = await AIService.getResponse(
-      message,
+      {
+        text: message,
+        image: image
+      },
       subject.name,
       topic,
       conversation.messages.map(msg => {
-        if (typeof msg.content === 'string') {
-          return {
-            role: msg.role,
-            content: msg.content
-          };
-        } else {
-          // Convert array content to string for context
+        if (Array.isArray(msg.content)) {
+          // For messages with array content (user messages with images)
           return {
             role: msg.role,
             content: msg.content
               .filter(c => c.type === 'text')
-              .map(c => (c as { text: string }).text)
+              .map(c => c.text)
               .join('\n')
           };
         }
+        // For simple text messages
+        return {
+          role: msg.role,
+          content: msg.content
+        };
       })
     );
     
