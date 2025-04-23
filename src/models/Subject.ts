@@ -7,6 +7,7 @@ interface ITopic {
 
 export interface ISubject extends Document {
   name: string;
+  fullName: string;
   topics: ITopic[];
   isActive: boolean;
   createdAt: Date;
@@ -30,6 +31,11 @@ const subjectSchema = new Schema<ISubject>({
     type: String,
     required: [true, 'Subject name is required'],
     unique: true,
+    trim: true
+  },
+  fullName: {
+    type: String,
+    required: [true, 'Full name is required'],
     trim: true
   },
   topics: [topicSchema],
