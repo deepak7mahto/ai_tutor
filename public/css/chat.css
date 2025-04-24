@@ -55,7 +55,10 @@
 
 .message {
   max-width: 80%;
-  padding: 1rem 1.25rem;
+  padding-left: 2rem;
+  padding-right: 1rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
   border-radius: 12px;
   position: relative;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
