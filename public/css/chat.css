@@ -497,6 +497,11 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  /* Global font size reduction for mobile */
+  body {
+    font-size: 0.9rem;
+  }
+  
   .page-container {
     flex-direction: column;
   }
@@ -511,6 +516,7 @@
   
   .message {
     max-width: 90%;
+    font-size: 0.9rem;
   }
   
   .chat-header {
@@ -518,16 +524,17 @@
   }
   
   .chat-info h2 {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
   }
   
   .btn {
     padding: 0.5rem 1rem;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
   }
   
   .sidebar-toggle {
     display: block;
+    font-size: 0.75rem;
   }
   
   #imagePreview {
@@ -540,12 +547,38 @@
     height: auto;
     margin-bottom: 0.5rem;
   }
+  
+  /* Reduce font size for conversation items */
+  .conversation-item {
+    font-size: 0.85rem;
+    padding: 0.75rem;
+  }
+  
+  .conversation-item .timestamp {
+    font-size: 0.7rem;
+  }
+  
+  /* Reduce font size for message time */
+  .message-time {
+    font-size: 0.7rem;
+  }
+  
+  /* Reduce font size for sidebar header */
+  .sidebar-header h3 {
+    font-size: 0.9rem;
+  }
 }
 
 @media (max-width: 480px) {
+  /* Further reduce font size for smaller mobile devices */
+  body {
+    font-size: 0.85rem;
+  }
+  
   .message {
     max-width: 95%;
     padding: 0.75rem 1rem;
+    font-size: 0.85rem;
   }
   
   .chat-messages {
@@ -555,9 +588,24 @@
   .input-container textarea {
     min-height: 36px;
     padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
   }
   
   .send-button {
     padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+  
+  .chat-info h2 {
+    font-size: 1rem;
+  }
+  
+  .topic {
+    font-size: 0.75rem;
+  }
+  
+  /* Smaller code font size */
+  .message code, .message pre code {
+    font-size: 0.8em;
   }
 }

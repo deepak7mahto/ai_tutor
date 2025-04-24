@@ -18,6 +18,7 @@ body {
   line-height: 1.5;
   color: var(--text-color);
   background-color: var(--bg-color);
+  font-size: 16px; /* Base font size */
 }
 
 .container {
@@ -136,4 +137,61 @@ body {
 /* Hide elements */
 .hidden {
   display: none;
+}
+
+/* Responsive typography for all pages */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px; /* 87.5% of base size */
+  }
+  
+  h1 {
+    font-size: 1.75rem;
+  }
+  
+  h2 {
+    font-size: 1.35rem;
+  }
+  
+  h3 {
+    font-size: 1.15rem;
+  }
+  
+  .btn {
+    font-size: 0.9rem;
+    padding: 0.65rem 1.3rem;
+  }
+  
+  .form-group input {
+    font-size: 0.9rem;
+    padding: 0.65rem;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    font-size: 13px; /* 81.25% of base size */
+  }
+  
+  h1 {
+    font-size: 1.5rem;
+  }
+  
+  h2 {
+    font-size: 1.25rem;
+  }
+  
+  h3 {
+    font-size: 1.1rem;
+  }
+  
+  .btn {
+    font-size: 0.85rem;
+    padding: 0.6rem 1.2rem;
+  }
+  
+  .form-group input {
+    font-size: 0.85rem;
+    padding: 0.6rem;
+  }
 }
