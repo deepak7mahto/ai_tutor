@@ -5,6 +5,24 @@ import { IUser } from '../models/User';
 import { AIService } from '../services/ai';
 import { TopicContext, SubjectContext, MessageContent } from '../types/ai';
 import { ChatRequest, GreetingRequest } from '../types/request';
+
+// Helper functions to parse AI response
+function extractContent(response: string): string {
+  const contentMatch = response.match(/\[CONTENT\]([\s\S]*?)\[\/CONTENT\]/);
+  return contentMatch ? contentMatch[1].trim() : response;
+}
+
+function extractQuestions(response: string): string[] {
+  const questionsMatch = response.match(/\[QUESTIONS\]([\s\S]*?)\[\/QUESTIONS\]/);
+  if (!questionsMatch) return [];
+  
+  return questionsMatch[1]
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.startsWith('-'))
+    .map(line => line.substring(1).trim());
+}
+
 const createSubjectContext = (subject: any, topicName: string): SubjectContext | null => {
   const topic = subject.topics.find((t: any) => t.name === topicName);
   if (!topic) return null;
@@ -63,7 +81,8 @@ export const getInitialGreeting = async (req: GreetingRequest, res: Response): P
     res.json({
       success: true,
       data: {
-        greeting: greetingResponse.content
+        greeting: extractContent(greetingResponse.content),
+        questions: extractQuestions(greetingResponse.content)
       }
     });
   } catch (error: any) {
@@ -229,7 +248,8 @@ export const sendMessage = async (req: ChatRequest, res: Response): Promise<void
       data: {
         conversationId: conversation._id,
         latestMessage: {
-          content: aiResponse.content,
+          content: extractContent(aiResponse.content),
+          questions: extractQuestions(aiResponse.content),
           role: 'assistant',
           timestamp: new Date()
         }

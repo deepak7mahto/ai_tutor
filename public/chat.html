@@ -199,7 +199,7 @@
             setTimeout(() => {
               // Hide typing indicator and show greeting
               typingIndicator.classList.add("hidden");
-              addMessage(greetingData.data.greeting, false);
+              addMessage(greetingData.data.greeting, false, greetingData.data.questions);
             }, 1000);
           }
         } catch (error) {
@@ -210,7 +210,7 @@
       }
 
       // Add message to chat
-      function addMessage(content, isUser = false) {
+      function addMessage(content, isUser = false, questions = []) {
         const messagesDiv = document.getElementById("chatMessages");
         const messageDiv = document.createElement("div");
         messageDiv.className = `message ${isUser ? "user" : "assistant"}`;
@@ -224,6 +224,23 @@
         timeSpan.className = "message-time";
         timeSpan.textContent = new Date().toLocaleTimeString();
         messageDiv.appendChild(timeSpan);
+
+        // Add question buttons for assistant messages
+        if (!isUser && questions && questions.length > 0) {
+          const questionsDiv = document.createElement("div");
+          questionsDiv.className = "suggested-questions";
+          questions.forEach(question => {
+            const button = document.createElement("button");
+            button.className = "btn btn-secondary question-btn";
+            button.textContent = question;
+            button.onclick = () => {
+              document.getElementById("messageInput").value = question;
+              document.getElementById("chatForm").requestSubmit();
+            };
+            questionsDiv.appendChild(button);
+          });
+          messageDiv.appendChild(questionsDiv);
+        }
 
         messagesDiv.appendChild(messageDiv);
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -328,7 +345,7 @@
             typingIndicator.classList.remove("hidden");
 
             // Add AI response to chat
-            addMessage(data.data.latestMessage.content);
+            addMessage(data.data.latestMessage.content, false, data.data.latestMessage.questions);
             
             // Hide typing indicator after receiving response
             typingIndicator.classList.add("hidden");
@@ -340,7 +357,7 @@
             removeImage();
           } catch (error) {
             console.error("Error sending message:", error);
-            addMessage("⚠️ Failed to get response. Please try again.", false);
+            addMessage("⚠️ Failed to get response. Please try again.", false, []);
             // Hide typing indicator on error
             typingIndicator.classList.add("hidden");
           } finally {
