@@ -7,22 +7,42 @@ import { TopicContext, SubjectContext, MessageContent } from '../types/ai';
 import { ChatRequest, GreetingRequest } from '../types/request';
 
 // Helper functions to parse AI response
-function extractContent(response: string): string {
+function tryParseJSON(text: string): any {
   try {
-    const parsed = JSON.parse(response);
-    return parsed.content || response;
+    return JSON.parse(text);
   } catch (error) {
-    return response;
+    return null;
   }
 }
 
-function extractQuestions(response: string): string[] {
-  try {
-    const parsed = JSON.parse(response);
-    return Array.isArray(parsed.questions) ? parsed.questions : [];
-  } catch (error) {
-    return [];
+function extractContent(response: string): string {
+  const parsed = tryParseJSON(response);
+  if (!parsed) return response;
+
+  // Handle case where response is already parsed by outer layer
+  if (typeof parsed.content === 'string') {
+    const nestedJSON = tryParseJSON(parsed.content);
+    if (nestedJSON && nestedJSON.content) {
+      return nestedJSON.content;
+    }
   }
+  
+  return parsed.content || response;
+}
+
+function extractQuestions(response: string): string[] {
+  const parsed = tryParseJSON(response);
+  if (!parsed) return [];
+
+  // Handle case where response is already parsed by outer layer
+  if (typeof parsed.content === 'string') {
+    const nestedJSON = tryParseJSON(parsed.content);
+    if (nestedJSON && Array.isArray(nestedJSON.questions)) {
+      return nestedJSON.questions;
+    }
+  }
+
+  return Array.isArray(parsed.questions) ? parsed.questions : [];
 }
 
 const createSubjectContext = (subject: any, topicName: string): SubjectContext | null => {

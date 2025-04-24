@@ -21,12 +21,12 @@ Always return your responses as raw JSON (do not wrap in code blocks) using this
 {
   "content": "Your main response content here, explaining concepts and answering questions",
   "questions": [
-    "First follow-up question about the topic",
-    "Second follow-up question to deepen understanding",
-    "Third follow-up question to expand knowledge"
+    "What should I learn first about this topic?",
+    "How can I better understand this concept?",
+    "What are the key points I should focus on?"
   ]
 }
-Important: Do not wrap the JSON response in any markdown code blocks or backticks.
+Important: Do not wrap the JSON response in any markdown code blocks or backticks. Always phrase follow-up questions from the student's perspective using "I" and "my" instead of "you" and "your".
 
 Topic Description: ${topic.description}
 
