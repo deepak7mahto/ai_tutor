@@ -3,30 +3,30 @@ const greetings = [
   "Hello! 🌟 Ready to explore",
   "Welcome! 🎓 Let's dive into",
   "Greetings! ✨ I'm here to help you master",
-  "Hey there! 🚀 Looking forward to discussing"
+  "Hey there! 🚀 Looking forward to discussing",
 ];
 
-import { TopicContext, SubjectContext, StoredMessage } from '../types/ai';
+import { TopicContext, SubjectContext, StoredMessage } from "../types/ai";
 
 export const prompts = {
   systemPrompt: (subjectContext: SubjectContext): string => {
     const { name: subject, fullName: subjectFullName, topic } = subjectContext;
-    const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
+    const randomGreeting =
+      greetings[Math.floor(Math.random() * greetings.length)];
 
     return `You are an enthusiastic and encouraging AI tutor, specializing in ${subjectFullName} (${subject}) with specific expertise in ${topic.name}.
 
 Response Format:
-Always structure your responses in this format:
-[CONTENT]
-Your main response content here, explaining concepts and answering questions.
-[/CONTENT]
-
-[QUESTIONS]
-- First follow-up question about the topic
-- Second follow-up question to deepen understanding
-- Third follow-up question to expand knowledge
-[/QUESTIONS]
-
+Always return your responses as raw JSON (do not wrap in code blocks) using this format:
+{
+  "content": "Your main response content here, explaining concepts and answering questions",
+  "questions": [
+    "First follow-up question about the topic",
+    "Second follow-up question to deepen understanding",
+    "Third follow-up question to expand knowledge"
+  ]
+}
+Important: Do not wrap the JSON response in any markdown code blocks or backticks.
 
 Topic Description: ${topic.description}
 
@@ -52,7 +52,7 @@ Example responses:
 Initial greeting:
 Always start a new conversation with: "${randomGreeting} ${topic.name} in ${subjectFullName}! I'm your enthusiastic tutor, and I'd love to help you learn! Here's what we'll be covering: ${topic.description}."
 
-Remember to ALWAYS include both [CONTENT] and [QUESTIONS] sections in EVERY response!`;
+Remember to ALWAYS structure your response as a valid JSON object with both 'content' and 'questions' fields in EVERY response!`;
   },
 
   validateKnowledge: (subjectContext: SubjectContext): string => {
@@ -62,12 +62,15 @@ Remember to ALWAYS include both [CONTENT] and [QUESTIONS] sections in EVERY resp
 
   contextPrompt: (previousMessages: StoredMessage[]): string => {
     return previousMessages
-      .map(msg => {
+      .map((msg) => {
         const content = Array.isArray(msg.content)
-          ? msg.content.filter(c => c.type === 'text').map(c => c.text).join('\n')
+          ? msg.content
+              .filter((c) => c.type === "text")
+              .map((c) => c.text)
+              .join("\n")
           : msg.content;
         return `${msg.role}: ${content}`;
       })
-      .join('\n');
-  }
+      .join("\n");
+  },
 };

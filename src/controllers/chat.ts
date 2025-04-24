@@ -8,19 +8,21 @@ import { ChatRequest, GreetingRequest } from '../types/request';
 
 // Helper functions to parse AI response
 function extractContent(response: string): string {
-  const contentMatch = response.match(/\[CONTENT\]([\s\S]*?)\[\/CONTENT\]/);
-  return contentMatch ? contentMatch[1].trim() : response;
+  try {
+    const parsed = JSON.parse(response);
+    return parsed.content || response;
+  } catch (error) {
+    return response;
+  }
 }
 
 function extractQuestions(response: string): string[] {
-  const questionsMatch = response.match(/\[QUESTIONS\]([\s\S]*?)\[\/QUESTIONS\]/);
-  if (!questionsMatch) return [];
-  
-  return questionsMatch[1]
-    .split('\n')
-    .map(line => line.trim())
-    .filter(line => line.startsWith('-'))
-    .map(line => line.substring(1).trim());
+  try {
+    const parsed = JSON.parse(response);
+    return Array.isArray(parsed.questions) ? parsed.questions : [];
+  } catch (error) {
+    return [];
+  }
 }
 
 const createSubjectContext = (subject: any, topicName: string): SubjectContext | null => {
