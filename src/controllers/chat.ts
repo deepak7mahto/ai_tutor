@@ -326,9 +326,36 @@ export const getConversation = async (req: ChatRequest, res: Response): Promise<
       return;
     }
 
+    // Normalize message content format for consistent client-side rendering
+    const normalizedConversation = {
+      ...conversation.toObject(),
+      messages: conversation.messages.map(msg => {
+        // Process message content based on its type
+        let normalizedContent: string | MessageContent[] = '';
+        
+        // If content is a string (assistant message)
+        if (typeof msg.content === 'string') {
+          // Extract content from [CONTENT] tags if present
+          normalizedContent = extractContent(msg.content);
+        } 
+        // If content is an array (user message with possible images)
+        else if (Array.isArray(msg.content)) {
+          // Extract text content from the array
+          const textItems = msg.content.filter(item => item.type === 'text');
+          normalizedContent = textItems.length > 0 && textItems[0].text ? textItems[0].text : '';
+        }
+
+        return {
+          role: msg.role,
+          content: normalizedContent,
+          timestamp: msg.timestamp
+        };
+      })
+    };
+
     res.json({
       success: true,
-      data: conversation
+      data: normalizedConversation
     });
   } catch (error: any) {
     res.status(500).json({
