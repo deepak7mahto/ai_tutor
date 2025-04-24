@@ -169,15 +169,37 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  width: 100%;
+}
+
+.input-wrapper {
+  width: 100%;
 }
 
 .input-container {
   display: flex;
-  gap: 0.5rem;
-  align-items: flex-end;
+  position: relative;
+  width: 100%;
+  border: 1px solid #ced4da;
+  border-radius: 20px;
+  background: white;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) inset;
 }
 
-.mic-button {
+.input-container:focus-within {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.input-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding-right: 0.5rem;
+}
+
+.action-button {
   background: none;
   border: none;
   cursor: pointer;
@@ -187,19 +209,27 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #6c757d;
 }
 
-.mic-button:hover {
+.action-button:hover {
   background: #f0f2f5;
+  color: var(--primary-color);
 }
 
 .mic-button.recording {
   background: #ff4444;
   animation: pulse 1.5s ease infinite;
+  color: white;
 }
 
-.mic-button.recording svg {
-  fill: white;
+.send-button {
+  color: var(--primary-color);
+}
+
+.send-button:hover {
+  background-color: var(--primary-color);
+  color: white;
 }
 
 @keyframes pulse {
@@ -212,13 +242,13 @@
   flex: 1;
   min-height: 40px;
   padding: 0.75rem 1rem;
-  border: 1px solid #ced4da;
+  border: none;
   border-radius: 20px;
-  resize: vertical;
+  resize: none;
   font-family: inherit;
   font-size: 0.95rem;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) inset;
+  background: transparent;
+  overflow: hidden;
 }
 
 @media (max-width: 768px) {
@@ -231,25 +261,29 @@
 
 .input-container textarea:focus {
   outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
 }
 
-.send-button {
-  align-self: flex-end;
-  border-radius: 20px;
-  padding: 0.6rem 1.2rem;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+.spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
 }
 
 @media (max-width: 768px) {
-  .send-button {
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
+  .action-button {
+    padding: 6px;
+  }
+  
+  .action-button svg {
+    width: 18px;
+    height: 18px;
   }
 }
 
