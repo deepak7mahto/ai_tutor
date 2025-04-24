@@ -116,6 +116,38 @@
 .input-container {
   display: flex;
   gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.mic-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mic-button:hover {
+  background: #f0f2f5;
+}
+
+.mic-button.recording {
+  background: #ff4444;
+  animation: pulse 1.5s ease infinite;
+}
+
+.mic-button.recording svg {
+  fill: white;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 }
 
 .input-container textarea {
