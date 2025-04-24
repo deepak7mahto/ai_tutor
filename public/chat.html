@@ -12,8 +12,9 @@
     <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
   </head>
 <body>
+    <button id="sidebarToggle" class="sidebar-toggle">≡ History</button>
     <div class="page-container">
-        <div class="conversation-sidebar">
+        <div id="conversationSidebar" class="conversation-sidebar">
             <div class="sidebar-header">
                 <h3>Previous Conversations</h3>
             </div>
@@ -274,11 +275,40 @@
               addMessage(greetingData.data.greeting, false, greetingData.data.questions);
             }, 1000);
           }
+          
+          // Initialize sidebar toggle for mobile
+          initSidebarToggle();
         } catch (error) {
           console.error("Error initializing chat:", error);
           alert("Failed to load chat. Redirecting to subjects page...");
           window.location.href = "/subjects.html";
         }
+      }
+      
+      // Initialize sidebar toggle functionality for mobile
+      function initSidebarToggle() {
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const conversationSidebar = document.getElementById('conversationSidebar');
+        
+        // Check screen width and hide sidebar on mobile by default
+        function checkScreenWidth() {
+          if (window.innerWidth <= 768) {
+            conversationSidebar.classList.add('hidden');
+          } else {
+            conversationSidebar.classList.remove('hidden');
+          }
+        }
+        
+        // Initial check
+        checkScreenWidth();
+        
+        // Toggle sidebar visibility on button click
+        sidebarToggle.addEventListener('click', function() {
+          conversationSidebar.classList.toggle('hidden');
+        });
+        
+        // Update on window resize
+        window.addEventListener('resize', checkScreenWidth);
       }
 
       // Add message to chat
