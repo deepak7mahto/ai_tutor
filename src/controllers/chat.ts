@@ -5,8 +5,6 @@ import { IUser } from '../models/User';
 import { AIService } from '../services/ai';
 import { TopicContext, SubjectContext, MessageContent } from '../types/ai';
 import { ChatRequest, GreetingRequest } from '../types/request';
-import { compressImage, isBase64Image, extractBase64Data } from '../utils/imageCompression';
-
 const createSubjectContext = (subject: any, topicName: string): SubjectContext | null => {
   const topic = subject.topics.find((t: any) => t.name === topicName);
   if (!topic) return null;
@@ -82,27 +80,6 @@ export const sendMessage = async (req: ChatRequest, res: Response): Promise<void
   try {
     const { message, subjectId, topic, conversationId, image: rawImage } = req.body;
     
-    // Handle image compression if present
-    let compressedImage: string | undefined;
-    if (rawImage && isBase64Image(rawImage)) {
-      try {
-        const imageBuffer = Buffer.from(extractBase64Data(rawImage), 'base64');
-        const compressedBuffer = await compressImage(imageBuffer, {
-          maxWidth: 800,
-          maxHeight: 800,
-          quality: 80,
-          format: 'webp'
-        });
-        compressedImage = `data:image/webp;base64,${compressedBuffer.toString('base64')}`;
-      } catch (error) {
-        console.error('Image compression error:', error);
-        res.status(400).json({
-          success: false,
-          message: 'Failed to process image'
-        });
-        return;
-      }
-    }
     const userId = req.user?._id;
 
     if (!userId) {
@@ -184,10 +161,10 @@ export const sendMessage = async (req: ChatRequest, res: Response): Promise<void
         type: 'text' as const,
         text: message
       },
-      ...(compressedImage ? [{
+      ...(rawImage ? [{
         type: 'image_url' as const,
         image_url: {
-          url: compressedImage
+          url: rawImage
         }
       }] : [])
     ];
@@ -211,7 +188,7 @@ export const sendMessage = async (req: ChatRequest, res: Response): Promise<void
     const aiResponse = await AIService.getResponse(
       {
         text: message,
-        image: compressedImage
+        image: rawImage
       },
       subjectContext,
       conversation.messages.map(msg => {

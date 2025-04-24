@@ -26,7 +26,6 @@
     "mongoose": "^8.13.2",
     "netlify-cli": "^20.0.2",
     "serverless-http": "^3.2.0",
-    "sharp": "^0.34.1",
     "showdown": "^2.1.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
