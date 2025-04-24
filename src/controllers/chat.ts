@@ -5,6 +5,7 @@ import { IUser } from '../models/User';
 import { AIService } from '../services/ai';
 import { TopicContext, SubjectContext, MessageContent } from '../types/ai';
 import { ChatRequest, GreetingRequest } from '../types/request';
+import { compressImage, isBase64Image, extractBase64Data } from '../utils/imageCompression';
 
 const createSubjectContext = (subject: any, topicName: string): SubjectContext | null => {
   const topic = subject.topics.find((t: any) => t.name === topicName);
@@ -79,7 +80,29 @@ export const getInitialGreeting = async (req: GreetingRequest, res: Response): P
 // Start new conversation or continue existing one
 export const sendMessage = async (req: ChatRequest, res: Response): Promise<void> => {
   try {
-    const { message, subjectId, topic, conversationId, image } = req.body;
+    const { message, subjectId, topic, conversationId, image: rawImage } = req.body;
+    
+    // Handle image compression if present
+    let compressedImage: string | undefined;
+    if (rawImage && isBase64Image(rawImage)) {
+      try {
+        const imageBuffer = Buffer.from(extractBase64Data(rawImage), 'base64');
+        const compressedBuffer = await compressImage(imageBuffer, {
+          maxWidth: 800,
+          maxHeight: 800,
+          quality: 80,
+          format: 'webp'
+        });
+        compressedImage = `data:image/webp;base64,${compressedBuffer.toString('base64')}`;
+      } catch (error) {
+        console.error('Image compression error:', error);
+        res.status(400).json({
+          success: false,
+          message: 'Failed to process image'
+        });
+        return;
+      }
+    }
     const userId = req.user?._id;
 
     if (!userId) {
@@ -161,10 +184,10 @@ export const sendMessage = async (req: ChatRequest, res: Response): Promise<void
         type: 'text' as const,
         text: message
       },
-      ...(image ? [{
+      ...(compressedImage ? [{
         type: 'image_url' as const,
         image_url: {
-          url: image
+          url: compressedImage
         }
       }] : [])
     ];
@@ -188,7 +211,7 @@ export const sendMessage = async (req: ChatRequest, res: Response): Promise<void
     const aiResponse = await AIService.getResponse(
       {
         text: message,
-        image: image
+        image: compressedImage
       },
       subjectContext,
       conversation.messages.map(msg => {
@@ -223,13 +246,20 @@ export const sendMessage = async (req: ChatRequest, res: Response): Promise<void
 
     await conversation.save();
 
-    res.json({
+    // Split response to handle large payloads
+    const responseData = {
       success: true,
       data: {
-        conversation,
-        latestResponse: aiResponse
+        conversationId: conversation._id,
+        latestMessage: {
+          content: aiResponse.content,
+          role: 'assistant',
+          timestamp: new Date()
+        }
       }
-    });
+    };
+
+    res.json(responseData);
   } catch (error: any) {
     res.status(500).json({
       success: false,

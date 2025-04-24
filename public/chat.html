@@ -80,6 +80,7 @@
     </div>
 
     <script src="/js/auth.js"></script>
+    <script src="/js/imageCompression.js"></script>
     <script>
       // Handle textarea key press
       function handleKeyDown(event) {
@@ -230,16 +231,29 @@
 
       let selectedImageBase64 = null;
 
-      function handleImageSelect(event) {
+      async function handleImageSelect(event) {
         const file = event.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            selectedImageBase64 = reader.result;
-            document.getElementById('selectedImage').src = reader.result;
-            document.getElementById('imagePreview').style.display = 'flex';
-          };
-          reader.readAsDataURL(file);
+        if (!file || !validateImage(file)) {
+          alert('Please select a valid image file under 10MB');
+          return;
+        }
+
+        try {
+          // Compress image before preview
+          selectedImageBase64 = await compressImage(file, {
+            maxWidth: 800,
+            maxHeight: 800,
+            quality: 0.8,
+            mimeType: 'image/webp'
+          });
+          
+          // Show preview
+          document.getElementById('selectedImage').src = selectedImageBase64;
+          document.getElementById('imagePreview').style.display = 'flex';
+        } catch (error) {
+          console.error('Image compression failed:', error);
+          alert('Failed to process image. Please try again.');
+          removeImage();
         }
       }
 
@@ -308,13 +322,13 @@
 
 
             // Update conversation ID
-            currentConversationId = data.data.conversation._id;
+            currentConversationId = data.data.conversationId;
 
             // Show typing indicator when waiting for AI response
             typingIndicator.classList.remove("hidden");
 
             // Add AI response to chat
-            addMessage(data.data.latestResponse.content);
+            addMessage(data.data.latestMessage.content);
             
             // Hide typing indicator after receiving response
             typingIndicator.classList.add("hidden");
