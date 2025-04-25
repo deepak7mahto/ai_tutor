@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { APIGatewayEvent } from 'aws-lambda';
 import { NetlifyRequest } from './types/request';
 import serverless from 'serverless-http';
@@ -38,12 +38,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // CORS middleware
-app.use((req, res, next) => {
+const corsMiddleware: express.RequestHandler = (req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
   next();
-});
+};
+app.use(corsMiddleware);
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -59,7 +66,7 @@ app.get('/api/health', (req: Request, res: Response) => {
 });
 
 // Error handling middleware
-app.use((err: any, req: Request, res: Response, next: any) => {
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);
   res.status(500).json({
     success: false,
